@@ -1,0 +1,28 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t joshdyck/react-test -f ./client/Dockerfile.dev ./client
+script: #test running section
+  - docker run joshdyck/react-test npm test -- --coverage # coverage makes sure the test exit with a zero to show everything was good
+
+after_success: # builds all our images so we can push them to docker hub
+  - docker build -t joshdyck/multi-client ./client
+  - docker build -t joshdyck/multi-nginx ./nginx
+  - docker build -t joshdyck/multi-server ./server
+  - docker build -t joshdyck/multi-worker ./worker
+  
+  # Login to docker CLI
+  
+  # echo "$DOCKER_PASSWORD" grabs the env password from travis and 
+  # passes it to the next command via stdin which grabs it via the --passwrod-stdin flag
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  
+  # Take those inmages and push to docker hub
+  - docker push joshdyck/multi-client 
+  - docker push joshdyck/multi-nginx 
+  - docker push joshdyck/multi-server
+  - docker push joshdyck/multi-worker
+
+
