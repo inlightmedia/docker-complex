@@ -1,0 +1,43 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:latest'
+  redis:
+    image: 'redis:latest'
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports: 
+      - '3050:80'
+  api:
+    build:
+      dockerfile: Dockerfile.dev # only specifices the filename not the location
+      context: ./server # specifies the directory to use to build from
+    volumes:
+      - /app/node_modules # dont redirect this folder
+      - ./server:/app # copy everything in here into the app folder but when accessing app refer to server so we can see the lartest changes in server without rebuilding
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
+  client:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /app/node_modules # protects the container node_modiules so that it doesn't get ignored by computer node_modules folder mapping
+      - ./client:/app
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - /app/node_modules # protects the container node_modiules so that it doesn't get ignored by computer node_modules folder mapping
+      - ./worker:/app
+  
